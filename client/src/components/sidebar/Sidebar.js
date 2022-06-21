@@ -17,7 +17,8 @@ const Sidebar = (props) => {
   const redirectUserToDefaultChatRoom = (chatUsers) => {
     if (props?.location?.pathname === AppPaths.HOME) {
       props.setCurrentChattingMember(chatUsers[0]);
-      props.history.push("/c/" + chatUsers[0].roomId);
+      // debugger;
+      // props.history.push("/c/" + chatUsers[0].roomId);
     } else {
       const activeChatId = CommonUtil.getActiveChatId(props.match);
       const chatUser = chatUsers.find((user) => user.roomId === activeChatId);
@@ -31,6 +32,7 @@ const Sidebar = (props) => {
       CommonUtil.getUserId()
     );
     const chatUsers = await ApiConnector.sendGetRequest(url);
+    // debugger;
     const formatedChatUser = CommonUtil.getFormatedChatUser(
       chatUsers,
       props.onlineUserList
@@ -43,16 +45,8 @@ const Sidebar = (props) => {
     fetchChatUser();
   }, []);
 
-  const getConnectedUserIds = () => {
-    let connectedUsers = "";
-    for (let chatUser of chatUsers) {
-      connectedUsers += chatUser.id + ",";
-    }
-    return connectedUsers.slice(0, -1);
-  };
-
   const fetchUsers = async () => {
-    const url = ApiEndpoints.USER_URL + "?exclude=" + getConnectedUserIds();
+    const url = ApiEndpoints.USER_URL;
     const users = await ApiConnector.sendGetRequest(url);
     setUsers(users);
   };
@@ -74,6 +68,7 @@ const Sidebar = (props) => {
       true,
       false
     );
+    debugger
     fetchChatUser();
     setIsShowAddPeopleModal(false);
   };

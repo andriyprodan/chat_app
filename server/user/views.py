@@ -1,11 +1,15 @@
+from django.db.models import Subquery
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
-from apps.user.models import User
-from apps.user.serializers import (
+from user.models import User
+from user.serializers import (
 	UserSerializer, LoginSerializer, SignupSerializer
 )
+
+from chat.models import ChatRoom
+
 
 class UserView(ListAPIView):
 	queryset = User.objects.all().order_by('first_name')
@@ -13,25 +17,21 @@ class UserView(ListAPIView):
 	pagination_class = LimitOffsetPagination
 
 	def get_queryset(self):
-		excludeUsersArr = []
-		try:
-			excludeUsers = self.request.query_params.get('exclude')
-			if excludeUsers:
-				userIds = excludeUsers.split(',')
-				for userId in userIds:
-					excludeUsersArr.append(int(userId))
-		except:
-			return []
-		return super().get_queryset().exclude(id__in=excludeUsersArr)
+		common_rooms = ChatRoom.objects.filter(type='DM', member__id=self.request.user.id)
+		return super().get_queryset().exclude(chat_rooms__id__in=Subquery(common_rooms.values('id')))
+
+	def get(self, request, *args, **kwargs):
+		resp = super().get(request, *args, **kwargs)
+		return resp
 
 
 class LoginApiView(TokenObtainPairView):
 	permission_classes = [AllowAny]
 	serializer_class = LoginSerializer
 
-	# def post(self, request, *args, **kwargs):
-	# 	resp = super().post(request, *args, **kwargs)
-	# 	return resp
+	def post(self, request, *args, **kwargs):
+		resp = super().post(request, *args, **kwargs)
+		return resp
 
 
 class SignupApiView(CreateAPIView):

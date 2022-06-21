@@ -1,8 +1,8 @@
 import json
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from apps.chat.models import ChatRoom, ChatMessage
-from apps.user.models import User, OnlineUser
+from chat.models import ChatRoom, ChatMessage
+from user.models import User, OnlineUser
 
 class ChatConsumer(AsyncWebsocketConsumer):
 	def getUser(self, userId):

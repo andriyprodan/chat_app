@@ -43,6 +43,7 @@ const ChatBody = ({ match, currentChattingMember, setOnlineUserList }) => {
   };
 
   socket.onmessage = (event) => {
+    // debugger;
     const data = JSON.parse(event.data);
     const chatId = CommonUtil.getActiveChatId(match);
     const userId = CommonUtil.getUserId();
@@ -66,6 +67,7 @@ const ChatBody = ({ match, currentChattingMember, setOnlineUserList }) => {
 
   const messageSubmitHandler = (event) => {
     event.preventDefault();
+    // debugger;
     if (inputMessage) {
       socket.send(
         JSON.stringify({

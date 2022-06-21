@@ -37,6 +37,7 @@ const getUserId = () => {
 };
 
 const getFormatedChatUser = (chatUsers, onlineUserList) => {
+  // debugger;
   const userId = getUserId();
   return chatUsers.reduce((acumulator, item) => {
     if (item.type === "DM" || item.type === "SELF") {
