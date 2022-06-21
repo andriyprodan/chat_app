@@ -4,6 +4,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from chat.models import ChatRoom, ChatMessage
 from user.models import User, OnlineUser
 
+from chat.serializers import ChatRoomSerializer
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
 	def getUser(self, userId):
 		return User.objects.get(id=userId)
@@ -59,7 +62,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		for room in self.userRooms:
 			await self.channel_layer.group_add(
 				room.roomId,
-				self.channel_name
+				# self.channel_name
+				f'channel_{self.userId}'
 			)
 		await self.channel_layer.group_add('onlineUser', self.channel_name)
 		self.user = await database_sync_to_async(self.getUser)(self.userId)
@@ -79,21 +83,45 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data):
 		text_data_json = json.loads(text_data)
 		action = text_data_json['action']
+		type = 'chat_message'
 		roomId = text_data_json['roomId']
-		chatMessage = {}
+		data = {}
 		if action == 'message':
 			message = text_data_json['message']
 			userId = text_data_json['user']
-			chatMessage = await database_sync_to_async(
+			data = await database_sync_to_async(
 				self.saveMessage
 			)(message, userId, roomId)
 		elif action == 'typing':
-			chatMessage = text_data_json
+			data = text_data_json
+		elif action == 'startChat':
+			serializer = ChatRoomSerializer(
+				data=text_data_json['data']
+			)
+			if serializer.is_valid():
+				type = 'startChat'
+				data = serializer.errors
+
+				instance = serializer.save()
+				roomId = instance.id
+				await self.channel_layer.group_add(
+					roomId,
+					self.channel_name
+				)
+				# await self.channel_layer.group_add(
+				# 	roomId,
+				# 	self.channel_name
+				# )
+
+			else:
+				type = 'startChatError'
+				data = serializer.errors
+
 		await self.channel_layer.group_send(
 			roomId,
 			{
-				'type': 'chat_message',
-				'message': chatMessage
+				'type': type,
+				'message': data
 			}
 		)
 
