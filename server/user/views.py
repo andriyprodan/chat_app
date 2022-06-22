@@ -1,4 +1,4 @@
-from django.db.models import Subquery
+from django.db.models import Subquery, Q
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
@@ -17,8 +17,9 @@ class UserView(ListAPIView):
 	pagination_class = LimitOffsetPagination
 
 	def get_queryset(self):
-		common_rooms = ChatRoom.objects.filter(type='DM', member__id=self.request.user.id)
-		return super().get_queryset().exclude(chat_rooms__id__in=Subquery(common_rooms.values('id')))
+		user_id = self.request.user.id
+		common_rooms = ChatRoom.objects.filter(type='DM', member__id=user_id)
+		return super().get_queryset().exclude(Q(chat_rooms__id__in=Subquery(common_rooms.values('id'))) | Q(pk=user_id))
 
 	def get(self, request, *args, **kwargs):
 		resp = super().get(request, *args, **kwargs)
