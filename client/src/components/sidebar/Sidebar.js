@@ -28,7 +28,9 @@ const Sidebar = (props) => {
     const addMemberClickHandler = async (memberId) => {
         const userId = CommonUtil.getUserId();
         let requestBody = {
-            members: [memberId, userId],
+            start_with: memberId,
+            creator: userId,
+            // members: [memberId, userId],
             type: "DM",
         };
 
@@ -45,7 +47,7 @@ const Sidebar = (props) => {
         //     true,
         //     false
         // );
-        debugger
+        // debugger
         setIsShowAddPeopleModal(false);
     };
 
@@ -74,7 +76,7 @@ const Sidebar = (props) => {
 
     return (
         <div className="col-12 col-sm-4 col-md-4 col-lg-4 col-xl-2 border-right">
-            <div className="d-none d-md-block">
+            <div className="d-md-block">
                 <button
                     onClick={addPeopleClickHandler}
                     className="btn btn-outline-warning btn-block my-1 mt-4"

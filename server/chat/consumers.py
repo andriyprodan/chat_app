@@ -4,7 +4,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from chat.models import ChatRoom, ChatMessage
 from user.models import User, OnlineUser
 
-from chat.serializers import ChatRoomSerializer
+from chat.serializers import CreateChatRoomSerializer
+
+USER_GROUP_PREFIX = 'u_'
+CHAT_GROUP_PREFIX = 'c_'
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -46,7 +49,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def sendOnlineUserList(self):
 		onlineUserList = await database_sync_to_async(self.getOnlineUsers)()
 		chatMessage = {
-			'type': 'chat_message',
+			'type': 'message',
 			'message': {
 				'action': 'onlineUser',
 				'userList': onlineUserList
@@ -56,14 +59,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		self.userId = self.scope['url_route']['kwargs']['userId']
+		await self.channel_layer.group_add(
+			USER_GROUP_PREFIX + self.userId,
+			self.channel_name
+		)
 		self.userRooms = await database_sync_to_async(
 			list
 		)(ChatRoom.objects.filter(member=self.userId))
 		for room in self.userRooms:
 			await self.channel_layer.group_add(
-				room.roomId,
-				# self.channel_name
-				f'channel_{self.userId}'
+				CHAT_GROUP_PREFIX + room.roomId,
+				self.channel_name
 			)
 		await self.channel_layer.group_add('onlineUser', self.channel_name)
 		self.user = await database_sync_to_async(self.getUser)(self.userId)
@@ -74,57 +80,112 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def disconnect(self, close_code):
 		await database_sync_to_async(self.deleteOnlineUser)(self.user)
 		await self.sendOnlineUserList()
+		await self.channel_layer.group_discard(
+			USER_GROUP_PREFIX + self.userId,
+			self.channel_name
+		)
 		for room in self.userRooms:
 			await self.channel_layer.group_discard(
-				room.roomId,
+				CHAT_GROUP_PREFIX + room.roomId,
 				self.channel_name
 			)
 
-	async def receive(self, text_data):
-		text_data_json = json.loads(text_data)
-		action = text_data_json['action']
-		type = 'chat_message'
-		roomId = text_data_json['roomId']
-		data = {}
-		if action == 'message':
-			message = text_data_json['message']
-			userId = text_data_json['user']
-			data = await database_sync_to_async(
-				self.saveMessage
-			)(message, userId, roomId)
-		elif action == 'typing':
-			data = text_data_json
-		elif action == 'startChat':
-			serializer = ChatRoomSerializer(
-				data=text_data_json['data']
-			)
-			if serializer.is_valid():
-				type = 'startChat'
-				data = serializer.errors
-
-				instance = serializer.save()
-				roomId = instance.id
-				await self.channel_layer.group_add(
-					roomId,
-					self.channel_name
-				)
-				# await self.channel_layer.group_add(
-				# 	roomId,
-				# 	self.channel_name
-				# )
-
-			else:
-				type = 'startChatError'
-				data = serializer.errors
+	async def message_command(self, data_json):
+		roomId = data_json['roomId']
+		message = data_json['message']
+		userId = data_json['user']
+		data = await database_sync_to_async(
+			self.saveMessage
+		)(message, userId, roomId)
 
 		await self.channel_layer.group_send(
-			roomId,
+			f'{CHAT_GROUP_PREFIX}{roomId}',
 			{
-				'type': type,
+				'type': 'message',
 				'message': data
 			}
 		)
 
-	async def chat_message(self, event):
+	async def typing_command(self, data_json):
+		roomId = data_json['roomId']
+		data = data_json
+		await self.channel_layer.group_send(
+			f'{CHAT_GROUP_PREFIX}{roomId}',
+			{
+				'type': 'message',
+				'message': data
+			}
+		)
+
+	def save_serializer(self, ser):
+		return ser.save()
+
+	async def start_chat_command(self, data_json):
+		serializer = CreateChatRoomSerializer(
+			data=data_json['data']
+		)
+		# is_valid = await database_sync_to_async(serializer.is_valid)()
+		if serializer.is_valid():
+			room = await database_sync_to_async(serializer.save)()
+			# room = serializer.save()
+			# data for sender
+			serializer.validated_data['roomId'] = room.roomId
+			data = serializer.validated_data
+			data['action'] = 'startChat'
+			# join newly created room
+			await self.channel_layer.group_add(
+				f'{CHAT_GROUP_PREFIX}{room.roomId}',
+				self.channel_name
+			)
+
+			# data for receiver
+			recv_data = serializer.validated_data.copy()
+			# we can't conn
+			recv_data['action'] = 'startChatRequest'
+
+			# send message to the person with whom chat was started
+			await self.channel_layer.group_send(
+				f'{USER_GROUP_PREFIX}{serializer.validated_data["start_with"]}',
+				{
+					'type': 'message',
+					'message': recv_data
+				}
+			)
+		else:
+			data = serializer.errors
+			data['action'] = 'startChatError'
+
+		# send message to the person that started the chat
+		foo = f'{USER_GROUP_PREFIX}{serializer.validated_data["creator"]}'
+		await self.channel_layer.group_send(
+			f'{USER_GROUP_PREFIX}{serializer.validated_data["creator"]}',
+			{
+				'type': 'message',
+				'message': data
+			}
+		)
+
+	async def join_chat_command(self, data_json):
+		roomId = data_json['message']['roomId']
+		await self.channel_layer.group_add(
+			f'{CHAT_GROUP_PREFIX}{roomId}',
+			self.channel_name
+		)
+
+	commands = {
+		'message': message_command,
+		'typing': typing_command,
+		'startChat': start_chat_command,
+		'joinChat': join_chat_command,
+	}
+
+	async def receive(self, text_data):
+		text_data_json = json.loads(text_data)
+		action = text_data_json['action']
+		# type = 'chat_message'
+		# data = {}
+		await self.commands[action](self, text_data_json)
+
+	async def message(self, event):
 		message = event['message']
 		await self.send(text_data=json.dumps(message))

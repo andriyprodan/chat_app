@@ -31,7 +31,7 @@ const HomeScreen = (props) => {
         // debugger;
         const formatedChatUser = CommonUtil.getFormatedChatUser(
             chatList,
-            props.onlineUserList
+            onlineUserList
         );
         setChatList(formatedChatUser);
         redirectUserToDefaultChatRoom(formatedChatUser);
@@ -54,7 +54,7 @@ const HomeScreen = (props) => {
     }, []);
 
     socket.onmessage = (event) => {
-        debugger;
+        // debugger;
         const data = JSON.parse(event.data);
         const chatId = CommonUtil.getActiveChatId(props.match); // todo get from activeChat
         const userId = CommonUtil.getUserId();
@@ -71,10 +71,22 @@ const HomeScreen = (props) => {
                 setTyping(data.typing);
             }
         }
+        // debugger;
         if (data.action === SocketActions.ONLINE_USER) {
             setOnlineUserList(data.userList);
         } else if (data.action === SocketActions.START_CHAT) {
+            debugger;
             fetchChatUser();
+        } else if (data.action === SocketActions.START_CHAT_REQUEST) {
+            debugger;
+            //    join chat
+            fetchChatUser();
+            socket.send(
+                JSON.stringify({
+                    action: SocketActions.JOIN_CHAT,
+                    message: data,
+                })
+            );
         }
     };
 
