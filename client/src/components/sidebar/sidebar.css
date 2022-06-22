@@ -1,20 +1,51 @@
 .user-list-container {
-  overflow: auto;
-  overflow-x: hidden;
-  height: 80vh;
+    overflow: auto;
+    overflow-x: hidden;
+    height: 80vh;
 }
+
 .chat-online {
-  color: #34ce57;
+    color: #34ce57;
 }
+
 .chat-offline {
-  color: #e4606d;
+    color: #e4606d;
 }
+
 .list-group-item {
-  padding: 0.4rem 1.25rem;
-  font-size: 10pt;
+    padding: 0.4rem 1.25rem;
+    font-size: 10pt;
 }
+
 .list-group-item-action:focus,
 .list-group-item-action:hover,
-.active-chat {
-  background-color: #fff3cd;
+.chat-list_item.active-chat {
+    background-color: mediumpurple;
+    color: white
+}
+
+.btn.add_people {
+    border: 1px solid darkblue;
+    color: darkblue;
+}
+
+.btn.add_people:hover {
+    background-color: darkblue;
+    color: white;
+}
+
+.top-bar {
+    background-color: cadetblue;
+    color: whitesmoke;
+}
+
+.sidebar {
+    background-color: cadetblue;
+    padding: 0 3px;
+}
+
+.chat-list_item {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    background-color: cadetblue;
 }

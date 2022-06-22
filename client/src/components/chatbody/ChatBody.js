@@ -83,7 +83,7 @@ const ChatBody = (props) => {
 
     return (
         <div className="col-12 col-sm-8 col-md-8 col-lg-8 col-xl-10 pl-0 pr-0">
-            <div className="py-2 px-4 border-bottom d-none d-lg-block">
+            <div className="py-2 px-4 border-bottom d-none d-lg-block top-bar">
                 <div className="d-flex align-items-center py-1">
                     <div className="position-relative">
                         <img
@@ -127,7 +127,7 @@ const ChatBody = (props) => {
                                     {CommonUtil.getTimeFromDate(message.timestamp)}
                                 </div>
                             </div>
-                            <div className="flex-shrink-1 bg-light ml-1 rounded py-2 px-3 mr-3">
+                            <div className="flex-shrink-1 ml-1 rounded py-2 px-3 mr-3 message_content">
                                 <div className="font-weight-bold mb-1">{message.userName}</div>
                                 {message.message}
                             </div>
@@ -135,7 +135,7 @@ const ChatBody = (props) => {
                     ))}
                 </div>
             </div>
-            <div className="flex-grow-0 py-3 px-4 border-top">
+            <div className="flex-grow-0 py-3 px-4 border-top chat-input_wrapper">
                 <form onSubmit={messageSubmitHandler}>
                     <div className="input-group">
                         <input

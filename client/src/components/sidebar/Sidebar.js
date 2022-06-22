@@ -75,11 +75,11 @@ const Sidebar = (props) => {
     };
 
     return (
-        <div className="col-12 col-sm-4 col-md-4 col-lg-4 col-xl-2 border-right">
+        <div className="col-12 col-sm-4 col-md-4 col-lg-4 col-xl-2 sidebar">
             <div className="d-md-block">
                 <button
                     onClick={addPeopleClickHandler}
-                    className="btn btn-outline-warning btn-block my-1 mt-4"
+                    className="btn btn-outline-warning btn-block my-1 mt-4 add_people"
                 >
                     Add People
                 </button>
@@ -91,7 +91,7 @@ const Sidebar = (props) => {
                             onClick={() => props.onActiveChatChange(chatUser)}
                             to={`/c/${chatUser.roomId}`}
                             className={
-                                "pl-1 list-group-item list-group-item-action border-0 " +
+                                "pl-1 list-group-item chat-list_item list-group-item-action " +
                                 getActiveChatClass(chatUser.roomId)
                             }
                             key={chatUser.id}

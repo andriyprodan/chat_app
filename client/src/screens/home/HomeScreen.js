@@ -16,7 +16,6 @@ let socket = new WebSocket(
 
 const HomeScreen = (props) => {
     const [activeChat, setActiveChat] = useState(null);
-    // const [currentChattingMember, setCurrentChattingMember] = useState({});
     const [onlineUserList, setOnlineUserList] = useState([]);
     const [chatList, setChatList] = useState([]); //sidebar users
     const [typing, setTyping] = useState(false);

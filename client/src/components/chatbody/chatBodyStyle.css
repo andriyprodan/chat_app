@@ -8,6 +8,7 @@
   overflow-y: scroll;
   scroll-behavior: smooth;
   transition: all 0.5s;
+  background-color: aliceblue;
 }
 .chat-message-left,
 .chat-message-right {
@@ -75,4 +76,12 @@
     transform: translateY(0px);
     background-color: #dac587;
   }
+}
+
+.chat-input_wrapper {
+  background-color: aliceblue;
+}
+
+.message_content {
+  background-color: aquamarine;
 }
